@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão de Suporte TI | Raimundo Loiola Jr (MEI)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex">
+
+  <!-- ==============================================
+       MENU LATERAL (SIDEBAR)
+       ============================================== -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col justify-between transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 shadow-2xl lg:shadow-none border-r border-slate-800">
+    
+    <div>
+      <!-- Topo: Identificação do Prestador -->
+      <div class="p-4 border-b border-slate-800/80 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md">
+            <i class="fa-solid fa-server text-lg"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-sm tracking-wide leading-tight">HelpDesk TI Pro</h1>
+            <p class="text-[11px] text-emerald-400 font-medium">Loiola Jr • Especialista TI</p>
+          </div>
+        </div>
+        <!-- Fechar Sidebar no Mobile -->
+        <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Seletor de Cliente Ativo -->
+      <div class="p-3 bg-slate-850 border-b border-slate-800">
+        <label class="block text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Cliente Selecionado:</label>
+        <div class="relative">
+          <select id="seletor-cliente-global" onchange="aoMudarClienteGlobal()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs font-semibold text-white outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+            <option value="">🏢 Todos os Clientes</option>
+            <!-- Preenchido via API com os clientes cadastrados -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Links de Navegação do Menu Lateral -->
+      <nav class="p-3 space-y-1 text-xs font-medium">
+        <button onclick="trocarAba('dashboard')" id="tab-dashboard" class="tab-btn active-tab w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-white">
+          <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+          <span class="flex-1">Dashboard & Horas</span>
+        </button>
+
+        <button onclick="trocarAba('chamados')" id="tab-chamados" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-ticket w-4 text-center"></i>
+          <span class="flex-1">Chamados de TI</span>
+          <span id="badge-total-abertos" class="bg-emerald-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+        </button>
+
+        <button onclick="trocarAba('clientes')" id="tab-clientes" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-building-user w-4 text-center"></i>
+          <span class="flex-1">Gestão de Clientes</span>
+          <span id="badge-total-clientes" class="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">1</span>
+        </button>
+
+        <button onclick="trocarAba('ativos')" id="tab-ativos" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-network-wired w-4 text-center"></i>
+          <span class="flex-1">Parque Tecnológico</span>
+        </button>
+
+        <button onclick="trocarAba('preventivas')" id="tab-preventivas" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-shield-halved w-4 text-center"></i>
+          <span class="flex-1">Backup & Preventivas</span>
+        </button>
+
+        <button onclick="trocarAba('faturamento')" id="tab-faturamento" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i>
+          <span class="flex-1">Faturamento & Relatório</span>
+        </button>
+
+        <button onclick="trocarAba('regras')" id="tab-regras" class="tab-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition text-left text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <i class="fa-solid fa-scale-balanced w-4 text-center"></i>
+          <span class="flex-1">Regras do Contrato</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Rodapé da Sidebar: Horário e Ações Rápidas -->
+    <div class="p-3 border-t border-slate-800 space-y-2.5">
+      <!-- Badge de Horário Comercial -->
+      <div id="badge-horario-sidebar" class="px-2.5 py-1.5 rounded-lg bg-slate-850 border border-slate-700/80 text-[11px] flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="txt-horario-sidebar" class="text-slate-300 font-medium truncate">Verificando horário...</span>
+      </div>
+
+      <!-- Botão Link para Cliente -->
+      <button onclick="abrirModalLinkCliente()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-3 rounded-xl transition text-xs flex items-center justify-center space-x-1.5 shadow-sm">
+        <i class="fa-solid fa-share-nodes"></i>
+        <span>Link para Cliente</span>
+      </button>
+
+      <!-- Botão Novo Chamado -->
+      <button onclick="abrirModalNovoChamado()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-3 rounded-xl transition text-xs flex items-center justify-center space-x-1.5 shadow-sm">
+        <i class="fa-solid fa-plus"></i>
+        <span>Novo Chamado</span>
+      </button>
+
+      <div class="text-[10px] text-center text-slate-500 pt-1">
+        Bacabal - MA • MEI 029.663.593-66
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Overlay de fundo para fechar sidebar no mobile -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+  <!-- ==============================================
+       CONTEÚDO PRINCIPAL (ÁREA DIREITA)
+       ============================================== -->
+  <div class="flex-1 lg:pl-64 flex flex-col min-h-screen">
+    
+    <!-- Topbar Superior -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        <!-- Botão Menu Mobile e Nome do Cliente -->
+        <div class="flex items-center space-x-3">
+          <button onclick="toggleSidebar()" class="lg:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100">
+            <i class="fa-solid fa-bars text-lg"></i>
+          </button>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span id="top-cliente-nome" class="font-bold text-sm sm:text-base text-slate-900">FRANCISCO S SILVA COMÉRCIO ATACADISTA</span>
+              <span id="top-cliente-status" class="hidden sm:inline-block text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">Contrato Ativo</span>
+            </div>
+            <p id="top-cliente-sub" class="text-[11px] text-slate-500">Unidade BR 316 & Centro • Franquia 8h / R$ 3.500,00</p>
+          </div>
+        </div>
+
+        <!-- Ações no Topo: Competência e Atalhos -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          
+          <!-- Seletor Mês/Ano -->
+          <div class="flex items-center bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200 text-xs">
+            <i class="fa-regular fa-calendar text-slate-500 mr-1.5"></i>
+            <input type="month" id="filtro-mes-ano" class="bg-transparent text-slate-700 outline-none cursor-pointer text-xs font-semibold" onchange="carregarTudo()">
+          </div>
+
+          <!-- Botão Link Cliente Rápido -->
+          <button onclick="abrirModalLinkCliente()" title="Enviar link para cliente abrir chamados" class="p-2 sm:px-3 sm:py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold flex items-center space-x-1.5 transition">
+            <i class="fa-solid fa-share-nodes text-xs"></i>
+            <span class="hidden md:inline">Link Cliente</span>
+          </button>
+
+          <!-- Botão Novo Chamado Rápido -->
+          <button onclick="abrirModalNovoChamado()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg transition shadow-sm flex items-center space-x-1.5">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span class="hidden sm:inline">Novo Chamado</span>
+          </button>
+
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Área de Exibição das Abas -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+      <!-- ==============================================
+           ABA 1: DASHBOARD & HORAS
+           ============================================== -->
+      <section id="view-dashboard" class="space-y-6">
+
+        <!-- Alerta de Horas da Franquia e Faturamento -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <!-- Card 1: Consumo da Franquia (8h mensais) -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Franquia Mensal (Cl. 6.1)</span>
+                <span id="dash-franquia-tag" class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">8h Inclusas</span>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span id="dash-horas-usadas" class="text-2xl font-bold text-slate-900">00h 00m</span>
+                <span id="dash-horas-total-label" class="text-xs text-slate-500">/ 08h 00m</span>
+              </div>
+
+              <!-- Barra de Progresso de Horas -->
+              <div class="w-full bg-slate-100 rounded-full h-3 mt-3 overflow-hidden">
+                <div id="dash-progresso-franquia" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+
+              <div class="flex justify-between items-center text-xs mt-2 text-slate-600 font-medium">
+                <span>Saldo restante: <strong id="dash-horas-saldo" class="text-emerald-700">08h 00m</strong></span>
+                <span id="dash-percentual-franquia">0%</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+              <span>Piso mínimo: 30m remoto / 1h presencial</span>
+              <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+            </div>
+          </div>
+
+          <!-- Card 2: Faturamento & Horas Adicionais -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Fechamento do Mês (Cláusula 7)</span>
+                <span id="dash-vencimento-tag" class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-medium">Venc. Dia 05</span>
+              </div>
+              <div class="flex items-baseline space-x-1">
+                <span class="text-xs font-medium text-slate-400">R$</span>
+                <span id="dash-total-faturamento" class="text-2xl font-bold text-emerald-700">3.500,00</span>
+              </div>
+              
+              <div class="space-y-1.5 mt-3 text-xs">
+                <div class="flex justify-between text-slate-600">
+                  <span>Mensalidade Fixa:</span>
+                  <span id="dash-val-mensalidade-fixa" class="font-semibold text-slate-800">R$ 3.500,00</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                  <span>Horas Extras Comerciais (<span id="dash-qtd-horas-extras">0h</span> × R$ 150):</span>
+                  <span id="dash-val-horas-extras" class="font-semibold text-slate-800">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between text-slate-600">
+                  <span>Urgências Fora Horário (<span id="dash-qtd-horas-plantao">0h</span> × R$ 225):</span>
+                  <span id="dash-val-horas-plantao" class="font-semibold text-amber-700">R$ 0,00</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500">Chave PIX: <strong>99981383157</strong></span>
+              <button onclick="copiarPix()" class="text-blue-600 hover:text-blue-700 font-semibold flex items-center space-x-1">
+                <i class="fa-regular fa-copy"></i>
+                <span>Copiar PIX</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 3: Conformidade de Backup e Preventiva -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Obrigações Contratuais</span>
+                <span class="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">Cláusulas 3 e 11</span>
+              </div>
+
+              <div class="space-y-3 mt-3">
+                <!-- Backup dos Servidores -->
+                <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-slate-50">
+                  <div class="flex items-center space-x-2.5">
+                    <div id="icon-backup" class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+                      <i class="fa-solid fa-database"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-bold text-slate-800">Backup Servidores</div>
+                      <div class="text-[11px] text-slate-500">Nuvem e HD Externo</div>
+                    </div>
+                  </div>
+                  <span id="status-backup-tag" class="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800">Conforme</span>
+                </div>
+
+                <!-- Preventiva Mensal -->
+                <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-slate-50">
+                  <div class="flex items-center space-x-2.5">
+                    <div id="icon-preventiva" class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+                      <i class="fa-solid fa-laptop-medical"></i>
+                    </div>
+                    <div>
+                      <div class="text-xs font-bold text-slate-800">Preventiva Mensal</div>
+                      <div class="text-[11px] text-slate-500">Estações e Antivírus</div>
+                    </div>
+                  </div>
+                  <span id="status-preventiva-tag" class="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800">Realizada</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <button onclick="trocarAba('preventivas')" class="text-blue-600 hover:text-blue-700 font-semibold flex items-center space-x-1">
+                <span>Registrar Verificação</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Métricas de Chamados & SLAs -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <div>
+              <div id="metric-abertos" class="text-xl font-bold text-slate-900">0</div>
+              <div class="text-xs text-slate-500">Chamados Abertos</div>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-headset"></i>
+            </div>
+            <div>
+              <div id="metric-em-atendimento" class="text-xl font-bold text-slate-900">0</div>
+              <div class="text-xs text-slate-500">Em Atendimento</div>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <div id="metric-urgentes" class="text-xl font-bold text-rose-600">0</div>
+              <div class="text-xs text-slate-500">Urgentes / SLA Crítico</div>
+            </div>
+          </div>
+
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <div id="metric-concluidos" class="text-xl font-bold text-slate-900">0</div>
+              <div class="text-xs text-slate-500">Concluídos no Mês</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela Resumida de Últimos Chamados -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-4 sm:px-6 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">Atendimentos Recentes no Mês</h2>
+              <p class="text-xs text-slate-500">Acompanhamento de prazos, modalidade e tempo faturado</p>
+            </div>
+            <button onclick="trocarAba('chamados')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+              <span>Ver Todos os Chamados</span>
+              <i class="fa-solid fa-chevron-right text-[10px]"></i>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-4">Protocolo / Data</th>
+                  <th class="py-3 px-4">Cliente & Solicitante</th>
+                  <th class="py-3 px-4">Assunto / Ativo</th>
+                  <th class="py-3 px-4">Prioridade / SLA</th>
+                  <th class="py-3 px-4">Modalidade</th>
+                  <th class="py-3 px-4">Tempo Faturado</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-dashboard-chamados" class="divide-y divide-slate-100">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==============================================
+           ABA 2: CHAMADOS (HELP DESK)
+           ============================================== -->
+      <section id="view-chamados" class="hidden space-y-4">
+        
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Busca -->
+            <div class="relative min-w-[220px]">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+              <input type="text" id="filtro-busca" placeholder="Buscar protocolo, título..." 
+                     oninput="carregarChamados()" 
+                     class="pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg w-full focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+
+            <!-- Filtro Status -->
+            <select id="filtro-status" onchange="carregarChamados()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none">
+              <option value="Todos">Status: Todos</option>
+              <option value="Aberto">Aberto</option>
+              <option value="Em Atendimento">Em Atendimento</option>
+              <option value="Aguardando Peça/Cliente">Aguardando Peça/Cliente</option>
+              <option value="Concluído">Concluído</option>
+            </select>
+
+            <!-- Filtro Prioridade -->
+            <select id="filtro-prioridade" onchange="carregarChamados()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 outline-none">
+              <option value="Todas">Prioridade: Todas</option>
+              <option value="Urgente">Urgente (SLA 2h)</option>
+              <option value="Normal">Normal (SLA 4h)</option>
+              <option value="Baixa">Baixa (SLA 2 dias)</option>
+            </select>
+          </div>
+
+          <button onclick="abrirModalNovoChamado()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition shadow-sm flex items-center space-x-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Novo Chamado</span>
+          </button>
+        </div>
+
+        <!-- Tabela Completa de Chamados -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-4">Protocolo / Data</th>
+                  <th class="py-3 px-4">Cliente / Solicitante</th>
+                  <th class="py-3 px-4">Unidade / Setor</th>
+                  <th class="py-3 px-4">Assunto / Ativo</th>
+                  <th class="py-3 px-4">Prioridade & SLA</th>
+                  <th class="py-3 px-4">Modalidade</th>
+                  <th class="py-3 px-4">Tempo Faturado</th>
+                  <th class="py-3 px-4">Status</th>
+                  <th class="py-3 px-4 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-chamados-completa" class="divide-y divide-slate-100">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==============================================
+           ABA 3: GESTÃO DE CLIENTES & CONTRATOS (NOVO!)
+           ============================================== -->
+      <section id="view-clientes" class="hidden space-y-5">
+        
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Carteira de Clientes e Contratos de Suporte</h2>
+            <p class="text-xs text-slate-500">Cadastre e gerencie contratos avulsos ou mensais com regras próprias de horas e faturamento</p>
+          </div>
+          <button onclick="abrirModalNovoCliente()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition shadow-sm flex items-center space-x-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Cadastrar Novo Cliente</span>
+          </button>
+        </div>
+
+        <!-- Grid de Cards de Clientes -->
+        <div id="grid-clientes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Preenchido via JS com os cards dos clientes -->
+        </div>
+
+      </section>
+
+      <!-- ==============================================
+           ABA 4: PARQUE TECNOLÓGICO (ATIVOS)
+           ============================================== -->
+      <section id="view-ativos" class="hidden space-y-4">
+        
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Inventário de Ativos Cobertos</h2>
+            <p class="text-xs text-slate-500">Relação completa de computadores, servidores, impressoras, coletores e infraestrutura de rede</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <select id="filtro-ativo-categoria" onchange="carregarAtivos()" class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-700 outline-none">
+              <option value="Todas">Todas as Categorias</option>
+              <option value="Computador/Notebook">Computadores e Notebooks</option>
+              <option value="Servidor">Servidores</option>
+              <option value="Impressora">Impressoras</option>
+              <option value="Coletor de Dados">Coletores de Dados</option>
+              <option value="Switch de Rede">Switches de Rede</option>
+              <option value="Roteador">Roteadores</option>
+              <option value="Ponto de Wi-Fi">Pontos de Wi-Fi</option>
+            </select>
+            <button onclick="abrirModalNovoAtivo()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-sm flex items-center space-x-1">
+              <i class="fa-solid fa-plus"></i>
+              <span>Adicionar Ativo</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="grid-ativos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Preenchido via JS -->
+        </div>
+
+      </section>
+
+      <!-- ==============================================
+           ABA 5: BACKUP E PREVENTIVAS
+           ============================================== -->
+      <section id="view-preventivas" class="hidden space-y-5">
+        
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Rotinas de Backup e Manutenções Preventivas</h2>
+            <p class="text-xs text-slate-500">Conformidade obrigatória com as Cláusulas 3.2, 3.3 e 11 do Contrato</p>
+          </div>
+          <button onclick="abrirModalNovaRotina()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition shadow-sm flex items-center space-x-1.5">
+            <i class="fa-solid fa-check-double"></i>
+            <span>Registrar Checagem Mensal</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-server"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Backup dos Servidores</h3>
+                <p class="text-xs text-slate-500">Bancos de dados e pastas compartilhadas (Nuvem / HD Externo)</p>
+              </div>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              O CONTRATADO configura e acompanha a rotina de backup em mídia HD Externo e Conta em Nuvem, com verificação técnica periódica e relatório de logs.
+            </p>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex items-center space-x-3 mb-3">
+              <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-broom"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Manutenção Preventiva Periódica</h3>
+                <p class="text-xs text-slate-500">Visita mensal ao parque de estações e computadores</p>
+              </div>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Limpeza lógica de arquivos temporários, verificação de integridade de discos, atualização de antivírus e correções de segurança para evitar paradas indesejadas.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-4 border-b border-slate-200">
+            <h3 class="text-xs font-bold uppercase text-slate-700 tracking-wider">Histórico de Verificações Registradas</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="py-3 px-4">Competência</th>
+                  <th class="py-3 px-4">Cliente</th>
+                  <th class="py-3 px-4">Tipo de Rotina</th>
+                  <th class="py-3 px-4">Data Execução</th>
+                  <th class="py-3 px-4">Técnico & Visto</th>
+                  <th class="py-3 px-4">Checklist</th>
+                  <th class="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-rotinas" class="divide-y divide-slate-100">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==============================================
+           ABA 6: FATURAMENTO & RELATÓRIO MENSAL
+           ============================================== -->
+      <section id="view-faturamento" class="hidden space-y-6">
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Cláusula 7 e 9.4</span>
+            <h2 class="text-lg font-bold text-slate-900 mt-1">Fechamento Mensal e Prestação de Contas</h2>
+            <p class="text-xs text-slate-500">Demonstrativo analítico de horas da franquia, horas excedentes e emissão de relatório PDF</p>
+          </div>
+
+          <div class="flex items-center space-x-3">
+            <a id="btn-gerar-pdf" href="/api/relatorio/pdf" target="_blank" class="bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs px-4 py-2.5 rounded-lg transition shadow-sm flex items-center space-x-2">
+              <i class="fa-solid fa-file-pdf text-sm"></i>
+              <span>Baixar Relatório Mensal em PDF</span>
+            </a>
+
+            <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs px-3.5 py-2.5 rounded-lg transition shadow-sm flex items-center space-x-1.5">
+              <i class="fa-solid fa-print"></i>
+              <span>Imprimir</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center space-x-2">
+              <i class="fa-solid fa-calculator text-emerald-600"></i>
+              <span>Cálculo Financeiro da Competência</span>
+            </h3>
+
+            <div class="space-y-3 text-xs">
+              <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                <span class="text-slate-600">Mensalidade Fixa Contratual:</span>
+                <span id="fat-mensalidade-fixa" class="font-bold text-slate-900 text-sm">R$ 3.500,00</span>
+              </div>
+
+              <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                <div>
+                  <span class="text-slate-600">Horas Excedentes Comerciais:</span>
+                  <div class="text-[11px] text-slate-400"><span id="fat-horas-extras-qtd">0h</span> × R$ 150,00/hora</div>
+                </div>
+                <span id="fat-horas-extras-val" class="font-bold text-slate-900 text-sm">R$ 0,00</span>
+              </div>
+
+              <div class="flex justify-between items-center py-1.5 border-b border-slate-50">
+                <div>
+                  <span class="text-slate-600">Horas Urgentes Fora do Horário (Plantão):</span>
+                  <div class="text-[11px] text-slate-400"><span id="fat-horas-plantao-qtd">0h</span> × R$ 225,00/hora (+50%)</div>
+                </div>
+                <span id="fat-horas-plantao-val" class="font-bold text-amber-700 text-sm">R$ 0,00</span>
+              </div>
+
+              <div class="flex justify-between items-center py-3 bg-emerald-50 px-3 rounded-lg border border-emerald-100 mt-2">
+                <span class="text-xs font-bold text-emerald-950 uppercase">Total a Faturar:</span>
+                <span id="fat-total-geral" class="text-xl font-extrabold text-emerald-700">R$ 3.500,00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center space-x-2">
+                <i class="fa-solid fa-receipt text-blue-600"></i>
+                <span>Dados de Liquidação e Pagamento</span>
+              </h3>
+
+              <div class="space-y-3 text-xs text-slate-600">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <div class="text-[11px] text-slate-400 uppercase font-semibold">Chave PIX (Telefone WhatsApp)</div>
+                  <div class="flex items-center justify-between mt-1">
+                    <span class="text-base font-mono font-bold text-slate-900">99981383157</span>
+                    <button onclick="copiarPix()" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-medium transition">
+                      Copiar
+                    </button>
+                  </div>
+                  <div class="text-[11px] text-slate-500 mt-1">Favorecido: Raimundo Francisco de Loiola Junior (MEI)</div>
+                </div>
+
+                <ul class="space-y-1.5 text-[11px] text-slate-500 list-disc list-inside">
+                  <li>Vencimento contratual: até o dia <strong id="fat-dia-vencimento">05 do mês seguinte</strong>.</li>
+                  <li>Emissão mensal de Nota Fiscal de Serviços (NFS-e SIMEI / MEI).</li>
+                  <li>Sem retenção de INSS, IRRF ou ISS na fonte (Cláusula 7.6).</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 text-xs flex justify-end">
+              <button onclick="copiarMensagemFechamento()" class="text-emerald-700 hover:text-emerald-800 font-semibold flex items-center space-x-1">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>Copiar Texto de Fechamento para WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ==============================================
+           ABA 7: REGRAS DO CONTRATO
+           ============================================== -->
+      <section id="view-regras" class="hidden space-y-6">
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-900 mb-2">Resumo Operacional dos Contratos de TI</h2>
+          <p class="text-xs text-slate-500 mb-6">Diretrizes de atendimento, limites de escopo e apuração de franquias de suporte técnico</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700">
+            
+            <div class="border border-emerald-200 bg-emerald-50/40 rounded-xl p-4">
+              <h3 class="font-bold text-emerald-900 text-sm flex items-center space-x-2 mb-2">
+                <i class="fa-solid fa-check-circle text-emerald-600"></i>
+                <span>Serviços Incluídos na Franquia (Cláusula 3)</span>
+              </h3>
+              <ul class="space-y-1.5 list-disc list-inside text-slate-700">
+                <li>Manutenção corretiva de computadores, notebooks e periféricos;</li>
+                <li>Manutenção preventiva periódica (visita mensal, atualizações e antivírus);</li>
+                <li>Monitoramento e assistência a servidores (backup, espaço em disco e logs);</li>
+                <li>Suporte a impressoras (drivers, configuração e falhas de impressão);</li>
+                <li>Administração de switches, roteadores e pontos de Wi-Fi;</li>
+                <li>Suporte remoto ou presencial a usuários em problemas de informática;</li>
+                <li>Suporte básico a coletores de dados (configuração e conexão de rede).</li>
+              </ul>
+            </div>
+
+            <div class="border border-rose-200 bg-rose-50/40 rounded-xl p-4">
+              <h3 class="font-bold text-rose-900 text-sm flex items-center space-x-2 mb-2">
+                <i class="fa-solid fa-ban text-rose-600"></i>
+                <span>Serviços NÃO Incluídos / Extras (Cláusula 4)</span>
+              </h3>
+              <ul class="space-y-1.5 list-disc list-inside text-slate-700">
+                <li>Fornecimento de peças, equipamentos, cabos e suprimentos;</li>
+                <li>Aquisição e renovação de licenças de software, antivírus e nuvem;</li>
+                <li>Projetos de infraestrutura, cabeamento estruturado e migração;</li>
+                <li>Desenvolvimento de sistemas ou banco de dados do ERP (Winthor);</li>
+                <li>Recuperação laboratorial física de discos rígidos danificados;</li>
+                <li>Suporte a fornecedores de internet ou software de terceiros;</li>
+                <li>Danos elétricos, mau uso ou vírus/ransomware por negligência.</li>
+              </ul>
+            </div>
+
+            <div class="border border-blue-200 bg-blue-50/40 rounded-xl p-4">
+              <h3 class="font-bold text-blue-900 text-sm flex items-center space-x-2 mb-2">
+                <i class="fa-solid fa-clock text-blue-600"></i>
+                <span>Horas, Franquia e Mínimos (Cláusula 6 e 7)</span>
+              </h3>
+              <ul class="space-y-1.5 text-slate-700">
+                <li><strong>Franquia Mensal:</strong> Horas inclusas no valor fixo mensal (sem acúmulo).</li>
+                <li><strong>Piso Mínimo Remoto:</strong> Mínimo de 30 minutos por chamado.</li>
+                <li><strong>Piso Mínimo Presencial:</strong> Mínimo de 01 hora por visita.</li>
+                <li><strong>Horas Excedentes Comerciais:</strong> R$ 150,00/hora.</li>
+                <li><strong>Plantão / Fora do Horário:</strong> R$ 225,00/hora (+50%, à parte da franquia).</li>
+              </ul>
+            </div>
+
+            <div class="border border-amber-200 bg-amber-50/40 rounded-xl p-4">
+              <h3 class="font-bold text-amber-900 text-sm flex items-center space-x-2 mb-2">
+                <i class="fa-solid fa-stopwatch text-amber-600"></i>
+                <span>Horários & SLAs de Atendimento (Cláusula 5 e 6.4)</span>
+              </h3>
+              <ul class="space-y-1.5 text-slate-700">
+                <li><strong>Horário Comercial:</strong> Segunda a Sexta, das 08:00 às 18:00.</li>
+                <li><strong>Urgente:</strong> Resposta remota em até 2 horas; presencial em até 4h úteis.</li>
+                <li><strong>Normal:</strong> Resposta em até 4 horas úteis.</li>
+                <li><strong>Baixa Prioridade:</strong> Atendimento em até 02 dias úteis.</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+        <p>Sistema de Gestão de Suporte Técnico em TI • Raimundo Loiola Jr (MEI) • Bacabal - MA</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ==============================================
+       MODAIS E DIALOGS
+       ============================================== -->
+
+  <!-- MODAL: CADASTRAR / EDITAR CLIENTE (NOVO!) -->
+  <div id="modal-cliente" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto">
+      
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white rounded-t-2xl">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+            <i class="fa-solid fa-building-user text-base"></i>
+          </div>
+          <div>
+            <h3 id="modal-cliente-titulo" class="font-bold text-sm">Cadastrar Novo Cliente</h3>
+            <p class="text-xs text-slate-300">Contrato de prestação de serviços de TI</p>
+          </div>
+        </div>
+        <button onclick="fecharModalCliente()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-cliente" onsubmit="salvarCliente(event)" class="p-5 space-y-4 text-xs">
+        <input type="hidden" id="cli-edit-id" value="">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-slate-700 mb-1">Razão Social / Nome da Empresa *</label>
+            <input type="text" id="cli-razao" required placeholder="Ex: COMÉRCIO SILVA & CIA LTDA" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Nome Fantasia</label>
+            <input type="text" id="cli-fantasia" placeholder="Ex: Silva Atacado" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 outline-none">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">CNPJ ou CPF</label>
+            <input type="text" id="cli-cnpj" placeholder="00.000.000/0000-00" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block font-semibold text-slate-700 mb-1">Endereço Completo</label>
+            <input type="text" id="cli-endereco" placeholder="Rua / Rodovia, Número, Bairro" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 outline-none">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Cidade / UF</label>
+            <input type="text" id="cli-cidade" value="Bacabal - MA" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 outline-none">
+          </div>
+        </div>
+
+        <!-- Parâmetros Contratuais de Horas e Valores -->
+        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+          <div class="font-bold text-slate-800 flex items-center space-x-1.5 text-xs">
+            <i class="fa-solid fa-file-contract text-blue-600"></i>
+            <span>Condições Comerciais do Contrato:</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] text-slate-500 mb-0.5">Valor Mensal (R$)</label>
+              <input type="number" step="0.01" id="cli-val-mensal" value="3500.00" required class="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-slate-500 mb-0.5">Franquia de Horas</label>
+              <input type="number" step="0.5" id="cli-franquia" value="8.0" required class="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-slate-500 mb-0.5">Hora Extra Comercial (R$)</label>
+              <input type="number" step="0.01" id="cli-val-extra" value="150.00" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-slate-500 mb-0.5">Hora Plantão (R$)</label>
+              <input type="number" step="0.01" id="cli-val-plantao" value="225.00" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label class="block text-[10px] text-slate-500 mb-0.5">Dia de Vencimento</label>
+              <input type="number" min="1" max="31" id="cli-vencimento" value="5" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500 mb-0.5">Status do Contrato</label>
+              <select id="cli-status" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white">
+                <option value="Ativo">Ativo</option>
+                <option value="Pendente">Em Negociação</option>
+                <option value="Inativo">Inativo</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Observações do Contrato / Escopo</label>
+          <textarea id="cli-obs" rows="2" placeholder="Observações específicas, ramais, servidores deste cliente..." class="w-full border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 outline-none"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-3 border-t border-slate-200">
+          <button type="button" onclick="fecharModalCliente()" class="px-4 py-2 border border-slate-300 rounded-xl text-slate-600 hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2 rounded-xl shadow-sm">Salvar Cliente</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO CHAMADO -->
+  <div id="modal-novo-chamado" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+      
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-plus"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Abertura de Chamado Técnico</h3>
+            <p class="text-xs text-slate-500">Validação automática de SLA e regras contratuais</p>
+          </div>
+        </div>
+        <button onclick="fecharModalNovoChamado()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form id="form-novo-chamado" onsubmit="salvarNovoChamado(event)" class="p-5 space-y-4 text-xs">
+
+        <!-- Seleção do Cliente para o chamado -->
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Empresa / Cliente *</label>
+          <select id="chamado-cliente-id" onchange="aoMudarClienteNoChamado()" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs outline-none">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <!-- Alerta de Horário -->
+        <div id="aviso-horario-modal" class="p-3 rounded-lg border text-xs">
+          <!-- Atualizado via JS -->
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Solicitante Oficial *</label>
+            <input type="text" id="chamado-solicitante" required placeholder="Ex: Celijane ou D. Elem" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Telefone WhatsApp</label>
+            <input type="text" id="chamado-telefone" value="(99) 98134-3989" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Unidade *</label>
+            <input type="text" id="chamado-unidade" value="Unidade BR 316" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Setor / Departamento</label>
+            <input type="text" id="chamado-setor" placeholder="Ex: Balcão de Vendas, Servidor" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Ativo Coberto Afetado</label>
+          <select id="chamado-ativo-id" class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs outline-none">
+            <option value="">Nenhum ativo específico / Suporte Geral a Usuário</option>
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Prioridade & SLA *</label>
+            <select id="chamado-prioridade" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs outline-none">
+              <option value="Normal">Normal (SLA 4h úteis - PCs/Impressoras)</option>
+              <option value="Urgente">Urgente (SLA 2h - Servidor parado ou Rede fora)</option>
+              <option value="Baixa">Baixa (SLA 2 dias - Dúvidas e melhorias)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Modalidade Prevista *</label>
+            <select id="chamado-modalidade" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs outline-none">
+              <option value="Remoto">Suporte Remoto (Piso mínimo de 30 min)</option>
+              <option value="Presencial">Visita Presencial (Piso mínimo de 60 min)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Título / Resumo do Problema *</label>
+          <input type="text" id="chamado-titulo" required placeholder="Ex: Lentidão na impressão de notas fiscais" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Descrição Detalhada do Chamado *</label>
+          <textarea id="chamado-descricao" rows="3" required placeholder="Descreva os sintomas, mensagens de erro e circunstâncias..." class="w-full border border-slate-300 rounded-lg p-2 text-xs"></textarea>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="chamado-fora-escopo" class="rounded text-amber-600 focus:ring-0">
+            <span class="font-semibold text-amber-900">Serviço Fora do Escopo Contratual (Cláusula 4)</span>
+          </label>
+          <p class="text-[11px] text-amber-800 mt-1 pl-5">Marque se o atendimento envolver peças, licenças adicionais, software de terceiros ou orçamento prévio.</p>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200">
+          <button type="button" onclick="fecharModalNovoChamado()" class="px-3.5 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+            Cancelar
+          </button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg transition shadow-sm">
+            Abrir Chamado
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALHES DO CHAMADO E APONTAMENTO DE HORAS -->
+  <div id="modal-detalhes-chamado" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto">
+      
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span id="det-protocolo" class="font-mono font-bold text-sm text-blue-700">CHAM-202610-001</span>
+            <span id="det-status-badge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold">Status</span>
+          </div>
+          <h3 id="det-titulo" class="text-base font-bold text-slate-900 mt-0.5">Título do Chamado</h3>
+        </div>
+        <button onclick="fecharModalDetalhes()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-semibold">Solicitante</div>
+            <div id="det-solicitante" class="font-bold text-slate-800">Celijane</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-semibold">Unidade</div>
+            <div id="det-unidade" class="font-bold text-slate-800">Unidade BR 316</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-semibold">Prioridade</div>
+            <div id="det-prioridade" class="font-bold text-slate-800">Normal</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-400 uppercase font-semibold">Modalidade</div>
+            <div id="det-modalidade" class="font-bold text-slate-800">Remoto</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-slate-400 uppercase font-semibold text-[10px]">Descrição Inicial:</div>
+          <div id="det-descricao" class="text-slate-700 bg-slate-50 p-2.5 rounded border border-slate-200 mt-1 whitespace-pre-line leading-relaxed">
+            -
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between p-2.5 bg-emerald-50 rounded-lg border border-emerald-200">
+          <div class="flex items-center space-x-2 text-emerald-900 font-medium">
+            <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i>
+            <span>Notificar Solicitante no WhatsApp</span>
+          </div>
+          <button onclick="enviarWhatsappChamado()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1 rounded text-xs transition flex items-center space-x-1">
+            <span>Enviar Mensagem</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </button>
+        </div>
+
+        <!-- Seção de Apontamentos de Horas -->
+        <div class="border-t border-slate-200 pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h4 class="font-bold text-slate-900 text-xs uppercase tracking-wide">Apontamentos de Horas (Time Tracking)</h4>
+              <p class="text-[11px] text-slate-500">Piso contratual automático: 30m Remoto / 60m Presencial</p>
+            </div>
+            <div class="text-right">
+              <span class="text-slate-500 text-[11px]">Total Faturado:</span>
+              <span id="det-total-horas" class="font-bold text-slate-900 ml-1 text-sm">00m</span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-lg mb-3">
+            <table class="w-full text-left text-[11px] text-slate-600">
+              <thead class="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="py-2 px-3">Data / Horário</th>
+                  <th class="py-2 px-3">Modalidade</th>
+                  <th class="py-2 px-3">Tempo Real</th>
+                  <th class="py-2 px-3">Tempo Faturado</th>
+                  <th class="py-2 px-3">Horário Comercial?</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-apontamentos" class="divide-y divide-slate-100">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+            <div class="font-semibold text-slate-700 text-xs">Registrar Sessão de Atendimento</div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-0.5">Início</label>
+                <input type="datetime-local" id="apt-inicio" class="w-full border border-slate-300 rounded p-1 text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-0.5">Fim</label>
+                <input type="datetime-local" id="apt-fim" class="w-full border border-slate-300 rounded p-1 text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-500 mb-0.5">Tipo</label>
+                <select id="apt-tipo" class="w-full border border-slate-300 rounded p-1 text-xs bg-white">
+                  <option value="Remoto">Remoto (Piso 30m)</option>
+                  <option value="Presencial">Presencial (Piso 60m)</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <button onclick="adicionarApontamento()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-1.5 px-2 rounded text-xs transition">
+                  + Adicionar Tempo
+                </button>
+              </div>
+            </div>
+            <input type="text" id="apt-descricao" placeholder="Descrição do trabalho executado nesta sessão..." class="w-full border border-slate-300 rounded p-1.5 text-xs">
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4 space-y-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Status do Chamado</label>
+            <select id="det-status-select" class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs outline-none">
+              <option value="Aberto">Aberto</option>
+              <option value="Em Atendimento">Em Atendimento</option>
+              <option value="Aguardando Peça/Cliente">Aguardando Peça/Cliente</option>
+              <option value="Concluído">Concluído</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Parecer Técnico / Solução Implementada</label>
+            <textarea id="det-solucao" rows="2" placeholder="Descreva os procedimentos executados para a solução definitiva..." class="w-full border border-slate-300 rounded-lg p-2 text-xs"></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <button onclick="excluirChamadoAtual()" class="text-rose-600 hover:text-rose-800 text-xs font-semibold flex items-center space-x-1">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>Excluir</span>
+        </button>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="fecharModalDetalhes()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-white text-xs">
+            Fechar
+          </button>
+          <button onclick="salvarAtualizacaoChamado()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition shadow-sm">
+            Salvar Alterações
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: LINK E QR CODE PARA O CLIENTE -->
+  <div id="modal-link-cliente" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+      
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+            <i class="fa-solid fa-share-nodes text-base"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm">Link de Abertura de Chamados</h3>
+            <p id="link-cliente-sub" class="text-xs text-slate-300">Para clientes e colaboradores abrirem chamados</p>
+          </div>
+        </div>
+        <button onclick="fecharModalLinkCliente()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs">
+        
+        <!-- Link de Rede Wi-Fi / Local -->
+        <div class="p-3.5 bg-blue-50 rounded-xl border border-blue-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-blue-950 flex items-center space-x-1.5">
+              <i class="fa-solid fa-wifi text-blue-600"></i>
+              <span>Link para Celulares e Computadores:</span>
+            </span>
+            <span class="text-[10px] bg-blue-200/70 text-blue-900 px-2 py-0.5 rounded-full font-semibold">Rede Local / Wi-Fi</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="link-cliente-input" readonly value="http://192.168.1.22:8000/abrir-chamado" class="flex-1 bg-white border border-blue-300 rounded-lg p-2 font-mono text-xs font-semibold text-slate-800 select-all outline-none">
+            <button onclick="copiarLinkCliente()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1">
+              <i class="fa-regular fa-copy"></i>
+              <span>Copiar</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-blue-800">
+            Qualquer funcionário ou cliente conectado na rede pode acessar este link diretamente pelo celular ou navegador.
+          </p>
+        </div>
+
+        <!-- Envio Rápido no WhatsApp dos Contatos Oficiais -->
+        <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50 space-y-2.5">
+          <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+            <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+            <span>Enviar Link no WhatsApp da Contratante:</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <a id="btn-whats-celijane" href="#" target="_blank" class="p-2.5 bg-white border border-emerald-300 rounded-lg text-emerald-900 hover:bg-emerald-50 transition flex items-center justify-between">
+              <div>
+                <div class="font-bold text-xs">Celijane</div>
+                <div class="text-[10px] text-slate-500">(99) 98134-3989 • BR 316</div>
+              </div>
+              <i class="fa-solid fa-paper-plane text-emerald-600 text-sm"></i>
+            </a>
+
+            <a id="btn-whats-elem" href="#" target="_blank" class="p-2.5 bg-white border border-emerald-300 rounded-lg text-emerald-900 hover:bg-emerald-50 transition flex items-center justify-between">
+              <div>
+                <div class="font-bold text-xs">D. Elem</div>
+                <div class="text-[10px] text-slate-500">(99) 98152-7346 • Centro</div>
+              </div>
+              <i class="fa-solid fa-paper-plane text-emerald-600 text-sm"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- QR Code para Imprimir e Colar no Balcão -->
+        <div class="border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 bg-white">
+          <div class="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
+            <img id="qr-code-img" src="" alt="QR Code Abertura de Chamados" class="w-24 h-24">
+          </div>
+          <div class="flex-1 text-center sm:text-left">
+            <h4 class="font-bold text-slate-900 text-xs">QR Code para Balcão e Setores</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">
+              Imprima e cole no balcão de vendas e departamentos. Os clientes só precisam apontar a câmera do celular!
+            </p>
+            <button onclick="imprimirQrCode()" class="mt-2 text-blue-600 hover:text-blue-800 font-semibold text-xs flex items-center space-x-1 mx-auto sm:mx-0">
+              <i class="fa-solid fa-print text-xs"></i>
+              <span>Imprimir Cartaz com QR Code</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button onclick="fecharModalLinkCliente()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg text-xs">
+          Fechar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR ROTINA / PREVENTIVA -->
+  <div id="modal-nova-rotina" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900">Registrar Checagem Mensal de Rotina</h3>
+        <button onclick="fecharModalNovaRotina()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form id="form-rotina" onsubmit="salvarRotina(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Cliente *</label>
+          <select id="rot-cliente-id" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Tipo de Rotina *</label>
+          <select id="rot-tipo" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs">
+            <option value="Backup Servidores">Backup Servidores (Cláusula 11 - Nuvem & HD)</option>
+            <option value="Preventiva Parque Tecnológico">Preventiva Parque Tecnológico (Cláusula 3.2)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Competência (Mês/Ano) *</label>
+            <input type="month" id="rot-mes" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Data da Execução *</label>
+            <input type="date" id="rot-data" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Responsável / Visto do Cliente *</label>
+          <input type="text" id="rot-cliente" placeholder="Ex: Celijane ou D. Elem" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1.5">
+          <div class="font-semibold text-slate-700 mb-1">Itens de Verificação Técnica:</div>
+          <label class="flex items-center space-x-2"><input type="checkbox" id="chk-nuvem" checked><span>Backup em Nuvem conferido e integro</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" id="chk-hd" checked><span>Backup em HD Externo sincronizado</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" id="chk-disco" checked><span>Espaço em disco dos servidores verificado</span></label>
+          <label class="flex items-center space-x-2"><input type="checkbox" id="chk-av" checked><span>Antivírus atualizado e sem malwares</span></label>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Detalhes e Parecer Técnico *</label>
+          <textarea id="rot-detalhes" rows="3" required placeholder="Observações sobre espaço livre, rotina de dump do Oracle/Winthor..." class="w-full border border-slate-300 rounded-lg p-2 text-xs"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+          <button type="button" onclick="fecharModalNovaRotina()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-1.5 rounded-lg">Salvar Registro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO ATIVO -->
+  <div id="modal-novo-ativo" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900">Cadastrar Novo Ativo no Parque</h3>
+        <button onclick="fecharModalNovoAtivo()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form id="form-ativo" onsubmit="salvarNovoAtivo(event)" class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Cliente *</label>
+          <select id="ativo-cliente-id" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs">
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Categoria *</label>
+          <select id="ativo-cat" required class="w-full border border-slate-300 rounded-lg p-2 bg-white text-xs">
+            <option value="Computador/Notebook">Computador / Notebook</option>
+            <option value="Servidor">Servidor</option>
+            <option value="Impressora">Impressora</option>
+            <option value="Coletor de Dados">Coletor de Dados</option>
+            <option value="Switch de Rede">Switch de Rede</option>
+            <option value="Roteador">Roteador</option>
+            <option value="Ponto de Wi-Fi">Ponto de Wi-Fi</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Identificador / Tag *</label>
+            <input type="text" id="ativo-tag" placeholder="Ex: PC-18, IMP-08" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Unidade *</label>
+            <input type="text" id="ativo-unidade" value="Unidade BR 316" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Descrição do Equipamento *</label>
+          <input type="text" id="ativo-desc" placeholder="Ex: PC Balcão Vendas Dell Core i5" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">Localização / Setor *</label>
+            <input type="text" id="ativo-setor" placeholder="Ex: Balcão de Vendas" required class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+          <div>
+            <label class="block text-slate-700 font-semibold mb-1">IP na Rede</label>
+            <input type="text" id="ativo-ip" placeholder="Ex: 192.168.1.55" class="w-full border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-700 font-semibold mb-1">Observações Técnicas</label>
+          <textarea id="ativo-obs" rows="2" placeholder="Garantia, número de série..." class="w-full border border-slate-300 rounded-lg p-2 text-xs"></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-200">
+          <button type="button" onclick="fecharModalNovoAtivo()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">Cancelar</button>
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-1.5 rounded-lg">Cadastrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast de Notificação -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl z-50 text-xs font-medium flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-2">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toast-msg">Mensagem</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
